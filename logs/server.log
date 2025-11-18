@@ -1,0 +1,14 @@
+INFO:     Will watch for changes in these directories: ['/home/workspace']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [152] using StatReload
+INFO:     Started server process [154]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     172.20.0.1:54584 - "HEAD / HTTP/1.1" 405 Method Not Allowed
+INFO:     172.20.0.1:39676 - "OPTIONS /auth/request-otp HTTP/1.1" 200 OK
+INFO:     172.20.0.1:39676 - "POST /auth/request-otp HTTP/1.1" 200 OK
+INFO:     172.20.0.1:39688 - "POST /auth/request-otp HTTP/1.1" 200 OK
+INFO:     172.20.0.1:41988 - "OPTIONS /auth/verify-otp HTTP/1.1" 200 OK
+INFO:     172.20.0.1:41988 - "POST /auth/verify-otp HTTP/1.1" 422 Unprocessable Content
+INFO:     172.20.0.1:41988 - "POST /auth/verify-otp HTTP/1.1" 422 Unprocessable Content
+INFO:     172.20.0.1:53100 - "POST /auth/request-otp HTTP/1.1" 200 OK
