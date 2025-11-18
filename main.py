@@ -30,12 +30,16 @@ class OTPVerify(BaseModel):
     name: Optional[str] = None
     email: Optional[EmailStr] = None
     password: Optional[str] = None
+    course: Optional[str] = None
+    semester: Optional[int] = Field(None, ge=1, le=8)
 
 class RegisterEmail(BaseModel):
     name: str
     email: EmailStr
     password: str
     phone: Optional[str] = None
+    course: str
+    semester: int = Field(..., ge=1, le=8)
 
 class LoginEmail(BaseModel):
     email: EmailStr
@@ -59,6 +63,7 @@ class TeacherLeaveIn(BaseModel):
 class StudentUpdate(BaseModel):
     name: Optional[str] = None
     semester: Optional[int] = Field(None, ge=1, le=8)
+    course: Optional[str] = None
     subjects: Optional[List[str]] = None
     min_threshold: Optional[float] = Field(None, ge=0, le=1)
 
@@ -145,7 +150,8 @@ def verify_otp(payload: OTPVerify):
             "phone": payload.phone,
             "password_hash": hash_password(payload.password) if payload.password else None,
             "role": "student",
-            "semester": None,
+            "course": payload.course,
+            "semester": payload.semester,
             "subjects": [],
             "min_threshold": 0.67,
         }
@@ -165,7 +171,8 @@ def register_email(payload: RegisterEmail):
         "phone": payload.phone,
         "password_hash": hash_password(payload.password),
         "role": "student",
-        "semester": None,
+        "course": payload.course,
+        "semester": payload.semester,
         "subjects": [],
         "min_threshold": 0.67,
     }
@@ -264,12 +271,20 @@ def is_teacher_leave(subject_code: str, d: date_type) -> bool:
 @app.get("/attendance/day")
 def attendance_day(student_id: str, d: date_type):
     ensure_db()
+    # Auto-mark as holiday for past days with no status at end of day
+    today = datetime.utcnow().date()
+    s = db.student.find_one({"_id": db.ObjectId(student_id)}) if hasattr(db, 'ObjectId') else db.student.find_one({"id": student_id})
+    subs = s.get("subjects", []) if s else []
+    if d < today and not is_holiday(d):
+        for code in subs:
+            if not is_teacher_leave(code, d):
+                q = {"student_id": student_id, "subject_code": code, "date": d}
+                if not db.attendancerecord.find_one(q):
+                    create_document("attendancerecord", {"student_id": student_id, "subject_code": code, "date": d, "sessions_held": 0, "attended_count": 0, "status": "holiday"})
+
     records = list(db.attendancerecord.find({"student_id": student_id, "date": d}))
     # Suggest defaults
     suggestions: Dict[str, str] = {}
-    # Use student's subjects
-    s = db.student.find_one({"_id": db.ObjectId(student_id)}) if hasattr(db, 'ObjectId') else db.student.find_one({"id": student_id})
-    subs = s.get("subjects", []) if s else []
     for code in subs:
         if is_holiday(d):
             suggestions[code] = "holiday"
